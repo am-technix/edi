@@ -11,7 +11,7 @@ from odoo.tools import float_compare, float_is_zero
 logger = logging.getLogger(__name__)
 
 try:
-    from facturx import xml_check_xsd
+    from facturx import get_flavor, get_xml_namespaces, xml_check_xsd
 except ImportError:
     logger.debug("Cannot import facturx")
 
@@ -100,6 +100,12 @@ class AccountInvoiceImport(models.TransientModel):
                     "/ram:PostalTradeAddress"
                     "/ram:CityName",  # Factur-X
                 ],
+                "einvoice_address": [
+                    "//ram:ApplicableHeaderTradeAgreement"
+                    "/ram:SellerTradeParty"
+                    "/ram:URIUniversalCommunication"
+                    "/ram:URIID[@schemeID='0225']",  # Factur-X
+                ],
             },
             "company": {
                 "vat": [
@@ -111,6 +117,12 @@ class AccountInvoiceImport(models.TransientModel):
                     "/ram:BuyerTradeParty"
                     "/ram:SpecifiedTaxRegistration"
                     "/ram:ID[@schemeID='VA']",  # ZUGFeRD
+                ],
+                "einvoice_address": [
+                    "//ram:ApplicableHeaderTradeAgreement"
+                    "/ram:BuyerTradeParty"
+                    "/ram:URIUniversalCommunication"
+                    "/ram:URIID[@schemeID='0225']",  # Factur-X
                 ],
             },
             "invoice_number": [
@@ -353,7 +365,8 @@ class AccountInvoiceImport(models.TransientModel):
     def parse_facturx_invoice(self, xml_root):  # noqa: C901
         """Parse Cross Industry Invoice XML file"""
         logger.debug("Starting to parse XML file as Factur-X/ZUGFeRD file")
-        namespaces = xml_root.nsmap
+        flavor = get_flavor(xml_root)
+        namespaces = get_xml_namespaces(flavor)
         # Check XML schema to avoid headaches trying to import invalid files
         try:
             xml_check_xsd(xml_root)

@@ -608,11 +608,11 @@ class AccountInvoiceImport(models.TransientModel):
         return parsed_inv
 
     @api.model
-    def _pre_process_parsed_inv_taxes(self, parsed_inv):
+    def _pre_process_parsed_inv_taxes(self, parsed_inv, force_no_vat_deduction=False):
         """Handle taxes in pre_processing parsed invoice."""
         # Handle the case where we import an invoice with VAT in a company that
         # cannot deduct VAT
-        if self.company_cannot_refund_vat():
+        if self.company_cannot_refund_vat() or force_no_vat_deduction:
             parsed_inv["amount_tax"] = 0
             parsed_inv["amount_untaxed"] = parsed_inv["amount_total"]
             for line in parsed_inv.get("lines", []):
